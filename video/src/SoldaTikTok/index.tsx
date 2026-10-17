@@ -1,0 +1,307 @@
+import React from "react";
+import {
+  AbsoluteFill,
+  cancelRender,
+  continueRender,
+  delayRender,
+  Img,
+  Sequence,
+  interpolate,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+// Fonte Montserrat salva em public/ (funciona sem internet na hora de gerar)
+const fontFamily = "Montserrat";
+const esperaFonte = delayRender("Carregando fonte");
+const fonte = new FontFace(
+  fontFamily,
+  `url('${staticFile("montserrat-900.woff2")}') format('woff2')`,
+  { weight: "900" },
+);
+fonte
+  .load()
+  .then(() => {
+    document.fonts.add(fonte);
+    continueRender(esperaFonte);
+  })
+  .catch((err) => cancelRender(err));
+
+const FONTE = { fontFamily, fontWeight: 900 } as const;
+
+// Tamanho original de cada foto (largura x altura)
+const TAMANHOS: Record<string, [number, number]> = {
+  "solda/1.jpg": [1320, 1155],
+  "solda/2.jpg": [1067, 1253],
+  "solda/3.jpg": [1320, 1188],
+  "solda/4.jpg": [1320, 1167],
+  "solda/5.jpg": [1320, 1205],
+};
+
+const AMARELO = "#FFE01B";
+const PRETO = "#0B0B0B";
+
+// Duração de cada cena em quadros (30 quadros = 1 segundo)
+const CENAS = [90, 105, 120, 105, 90, 90];
+export const SOLDA_DURACAO = CENAS.reduce((a, b) => a + b, 0);
+
+const inicio = (i: number) => CENAS.slice(0, i).reduce((a, b) => a + b, 0);
+
+const useEntrada = (atraso = 0) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  return spring({ frame: frame - atraso, fps, config: { damping: 14 } });
+};
+
+const Titulo: React.FC<{ linhas: string[]; destaque?: number }> = ({
+  linhas,
+  destaque = -1,
+}) => {
+  const p = useEntrada();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 130,
+        left: 60,
+        right: 60,
+        textAlign: "center",
+        transform: `translateY(${interpolate(p, [0, 1], [-60, 0])}px)`,
+        opacity: p,
+      }}
+    >
+      {linhas.map((l, i) => (
+        <div
+          key={l}
+          style={{
+            ...FONTE,
+            fontSize: 84,
+            lineHeight: 1.05,
+            color: i === destaque ? AMARELO : "white",
+            textShadow: "0 6px 18px rgba(0,0,0,0.8)",
+          }}
+        >
+          {l}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const Foto: React.FC<{ src: string }> = ({ src }) => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+  const p = useEntrada(4);
+  const zoom = interpolate(frame, [0, durationInFrames], [1, 1.04]);
+  const [w, h] = TAMANHOS[src];
+  const escala = Math.min(960 / w, 940 / h);
+  const largura = w * escala;
+  const altura = h * escala;
+  return (
+    <>
+      <AbsoluteFill>
+        <Img
+          src={staticFile(src)}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            filter: "blur(40px) brightness(0.35)",
+            transform: "scale(1.3)",
+          }}
+        />
+      </AbsoluteFill>
+      <div
+        style={{
+          position: "absolute",
+          top: 950 - altura / 2,
+          left: (1080 - largura) / 2,
+          width: largura,
+          height: altura,
+          borderRadius: 40,
+          overflow: "hidden",
+          border: `8px solid ${AMARELO}`,
+          boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
+          transform: `scale(${interpolate(p, [0, 1], [0.85, 1])})`,
+          opacity: p,
+        }}
+      >
+        <Img
+          src={staticFile(src)}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            transform: `scale(${zoom})`,
+          }}
+        />
+      </div>
+    </>
+  );
+};
+
+const Etiqueta: React.FC<{ texto: string; atraso: number }> = ({
+  texto,
+  atraso,
+}) => {
+  const p = useEntrada(atraso);
+  return (
+    <div
+      style={{
+        ...FONTE,
+        fontSize: 44,
+        background: AMARELO,
+        color: PRETO,
+        padding: "14px 30px",
+        borderRadius: 20,
+        transform: `scale(${p})`,
+      }}
+    >
+      {texto}
+    </div>
+  );
+};
+
+const Rodape: React.FC<{ itens: string[]; inicioAtraso?: number }> = ({
+  itens,
+  inicioAtraso = 12,
+}) => (
+  <div
+    style={{
+      position: "absolute",
+      top: 1470,
+      left: 40,
+      right: 40,
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 18,
+      justifyContent: "center",
+    }}
+  >
+    {itens.map((t, i) => (
+      <Etiqueta key={t} texto={t} atraso={inicioAtraso + i * 8} />
+    ))}
+  </div>
+);
+
+const Cena: React.FC<{
+  img: string;
+  titulo: string[];
+  destaque?: number;
+  itens: string[];
+}> = ({ img, titulo, destaque, itens }) => (
+  <AbsoluteFill style={{ backgroundColor: PRETO }}>
+    <Foto src={img} />
+    <Titulo linhas={titulo} destaque={destaque} />
+    <Rodape itens={itens} />
+  </AbsoluteFill>
+);
+
+const Final: React.FC = () => {
+  const p = useEntrada();
+  const p2 = useEntrada(15);
+  const frame = useCurrentFrame();
+  const pulso = 1 + Math.sin(frame / 5) * 0.04;
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: AMARELO,
+        alignItems: "center",
+        justifyContent: "center",
+        ...FONTE,
+        color: PRETO,
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 130,
+          background: PRETO,
+          color: AMARELO,
+          padding: "10px 50px",
+          borderRadius: 24,
+          transform: `scale(${p})`,
+        }}
+      >
+        BOMVINK
+      </div>
+      <Img
+        src={staticFile("solda/5.jpg")}
+        style={{
+          width: 620,
+          height: 620,
+          objectFit: "cover",
+          borderRadius: "50%",
+          margin: "50px 0",
+          border: `10px solid ${PRETO}`,
+          transform: `scale(${p})`,
+        }}
+      />
+      <div style={{ fontSize: 96, lineHeight: 1.05, opacity: p }}>
+        FIO DE SOLDA
+        <br />
+        1MM · 40G
+      </div>
+      <div
+        style={{
+          marginTop: 60,
+          fontSize: 76,
+          background: PRETO,
+          color: "white",
+          padding: "20px 50px",
+          borderRadius: 999,
+          transform: `scale(${p2 * pulso})`,
+        }}
+      >
+        LINK NO PERFIL
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const SoldaTikTok: React.FC = () => {
+  const cenas = [
+    <Cena
+      img="solda/2.jpg"
+      titulo={["SUA SOLDA", "NÃO PEGA", "NA PLACA?"]}
+      destaque={1}
+      itens={["O PROBLEMA PODE SER O FIO"]}
+    />,
+    <Cena
+      img="solda/5.jpg"
+      titulo={["FIO DE SOLDA", "BOMVINK"]}
+      destaque={1}
+      itens={["ESTANHO 40%", "1 MM", "40 G"]}
+    />,
+    <Cena
+      img="solda/4.jpg"
+      titulo={["FLUXO JÁ VEM", "DENTRO DO FIO"]}
+      destaque={1}
+      itens={["MENOS FUMAÇA", "ESPESSURA UNIFORME", "RESISTE À CORROSÃO"]}
+    />,
+    <Cena
+      img="solda/1.jpg"
+      titulo={["SERVE PARA", "VÁRIOS USOS"]}
+      destaque={1}
+      itens={["PLACAS", "ELETRÔNICOS", "REPAROS", "PROJETOS"]}
+    />,
+    <Cena
+      img="solda/3.jpg"
+      titulo={["DO CONSERTO", "AO PROJETO", "EM CASA"]}
+      destaque={2}
+      itens={["SOLDA FIRME E DURADOURA"]}
+    />,
+    <Final />,
+  ];
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: PRETO }}>
+      {cenas.map((c, i) => (
+        <Sequence key={i} from={inicio(i)} durationInFrames={CENAS[i]}>
+          {c}
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
