@@ -190,15 +190,47 @@ const Rodape: React.FC<{ itens: string[]; inicioAtraso?: number }> = ({
   </div>
 );
 
+// Selo laranja piscando no canto da foto (ex.: "PREÇO PROMOCIONAL")
+const Selo: React.FC<{ texto: string }> = ({ texto }) => {
+  const frame = useCurrentFrame();
+  const p = useEntrada(10);
+  const pulso = 1 + Math.sin(frame / 4) * 0.05;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 430,
+        right: 30,
+        ...FONTE,
+        fontSize: 46,
+        lineHeight: 1.05,
+        textAlign: "center",
+        background: LARANJA,
+        color: "white",
+        padding: "18px 28px",
+        borderRadius: 24,
+        border: `5px solid ${PRETO}`,
+        boxShadow: "0 12px 30px rgba(0,0,0,0.5)",
+        transform: `rotate(6deg) scale(${p * pulso})`,
+        whiteSpace: "pre-line",
+      }}
+    >
+      {texto}
+    </div>
+  );
+};
+
 const Cena: React.FC<{
   img: string;
   titulo: string[];
   destaque?: number;
   itens: string[];
-}> = ({ img, titulo, destaque, itens }) => (
+  selo?: string;
+}> = ({ img, titulo, destaque, itens, selo }) => (
   <AbsoluteFill style={{ backgroundColor: PRETO }}>
     <Foto src={img} />
     <Titulo linhas={titulo} destaque={destaque} />
+    {selo ? <Selo texto={selo} /> : null}
     <Rodape itens={itens} />
   </AbsoluteFill>
 );
@@ -331,6 +363,175 @@ export const SoldaTikTok: React.FC<{ narracao?: boolean }> = ({
               <Audio src={staticFile(`narracao/${i + 1}.wav`)} volume={1.7} />
             </Sequence>
           ) : null}
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
+
+// Versão para a missão do TikTok Shop: oferta, urgência, benefícios e chamada
+const CENAS_OFERTA = [142, 127, 170, 168, 147, 149, 185];
+export const SOLDA_OFERTA_DURACAO = soma(CENAS_OFERTA);
+
+const FinalOferta: React.FC = () => {
+  const p = useEntrada();
+  const p2 = useEntrada(12);
+  const frame = useCurrentFrame();
+  const pulso = 1 + Math.sin(frame / 5) * 0.04;
+  const pulo = Math.abs(Math.sin(frame / 6)) * 40;
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: AMARELO,
+        alignItems: "center",
+        paddingTop: 150,
+        ...FONTE,
+        color: PRETO,
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 110,
+          background: PRETO,
+          color: AMARELO,
+          padding: "10px 50px",
+          borderRadius: 24,
+          transform: `scale(${p})`,
+        }}
+      >
+        BOMVINK
+      </div>
+      <Img
+        src={staticFile("solda/5.jpg")}
+        style={{
+          width: 520,
+          height: 520,
+          objectFit: "cover",
+          borderRadius: "50%",
+          margin: "40px 0 30px",
+          border: `10px solid ${PRETO}`,
+          transform: `scale(${p})`,
+        }}
+      />
+      <div style={{ fontSize: 80, lineHeight: 1.05, opacity: p }}>
+        PREÇO PROMOCIONAL
+      </div>
+      <div
+        style={{
+          fontSize: 48,
+          marginTop: 16,
+          background: PRETO,
+          color: "white",
+          padding: "8px 30px",
+          borderRadius: 14,
+          opacity: p,
+        }}
+      >
+        SÓ ENQUANTO DURAR O ESTOQUE
+      </div>
+      <div
+        style={{
+          marginTop: 50,
+          fontSize: 60,
+          lineHeight: 1.1,
+          background: LARANJA,
+          color: "white",
+          padding: "24px 50px",
+          borderRadius: 40,
+          border: `6px solid ${PRETO}`,
+          display: "flex",
+          alignItems: "center",
+          gap: 30,
+          textAlign: "left",
+          transform: `scale(${p2 * pulso})`,
+        }}
+      >
+        <svg width="110" height="110" viewBox="0 0 24 24" fill="white">
+          <path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM1 2v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7l1.1-2h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1Z" />
+        </svg>
+        <div>
+          TOQUE NO
+          <br />
+          CARRINHO LARANJA
+        </div>
+      </div>
+      {/* Seta pulando para baixo, apontando para o link do produto */}
+      <svg
+        width="130"
+        height="130"
+        viewBox="0 0 24 24"
+        fill={PRETO}
+        style={{
+          marginTop: 20,
+          transform: `translateY(${pulo}px)`,
+          opacity: p2,
+        }}
+      >
+        <path d="M11 4h2v12l5.5-5.5 1.42 1.42L12 19.84l-7.92-7.92L5.5 10.5 11 16V4Z" />
+      </svg>
+    </AbsoluteFill>
+  );
+};
+
+export const SoldaOferta: React.FC = () => {
+  const cenas = [
+    <Cena
+      img="solda/5.jpg"
+      titulo={["FIO DE SOLDA", "COM PREÇO", "PROMOCIONAL!"]}
+      destaque={2}
+      itens={["APROVEITE AGORA"]}
+      selo={"OFERTA\nBOMVINK"}
+    />,
+    <Cena
+      img="solda/4.jpg"
+      titulo={["CORRE!", "ESTOQUE LIMITADO"]}
+      destaque={0}
+      itens={["SÓ ENQUANTO DURAR", "ACABOU, ACABOU"]}
+      selo={"OFERTA\nLIMITADA"}
+    />,
+    <Cena
+      img="solda/2.jpg"
+      titulo={["FLUXO JÁ VEM", "DENTRO DO FIO"]}
+      destaque={1}
+      itens={["ESCORRE FÁCIL", "GRUDA FIRME", "MENOS FUMAÇA"]}
+    />,
+    <Cena
+      img="solda/5.jpg"
+      titulo={["1 MM · 40 G", "ESPESSURA UNIFORME"]}
+      destaque={0}
+      itens={["RESISTE À CORROSÃO", "ESTANHO 40%"]}
+    />,
+    <Cena
+      img="solda/1.jpg"
+      titulo={["SERVE PARA", "VÁRIOS USOS"]}
+      destaque={1}
+      itens={["PLACAS", "ELETRÔNICOS", "REPAROS", "PROJETOS"]}
+    />,
+    <Cena
+      img="solda/3.jpg"
+      titulo={["SOLDA FIRME", "E DURADOURA"]}
+      destaque={1}
+      itens={["DO CONSERTO AO PROJETO"]}
+    />,
+    <FinalOferta />,
+  ];
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: PRETO }}>
+      {cenas.map((c, i) => (
+        <Sequence
+          key={i}
+          from={soma(CENAS_OFERTA.slice(0, i))}
+          durationInFrames={CENAS_OFERTA[i]}
+        >
+          {c}
+          <Sequence from={6}>
+            <Audio
+              src={staticFile(`narracao-oferta/${i + 1}.wav`)}
+              volume={1.7}
+            />
+          </Sequence>
         </Sequence>
       ))}
     </AbsoluteFill>

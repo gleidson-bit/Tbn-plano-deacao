@@ -7,6 +7,8 @@ import {
 import {
   SOLDA_DURACAO,
   SOLDA_DURACAO_NARRADO,
+  SOLDA_OFERTA_DURACAO,
+  SoldaOferta,
   SoldaTikTok,
 } from "./SoldaTikTok";
 
@@ -42,6 +44,14 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={{ narracao: true }}
+      />
+      <Composition
+        id="SoldaOferta"
+        component={SoldaOferta}
+        durationInFrames={SOLDA_OFERTA_DURACAO}
+        fps={30}
+        width={1080}
+        height={1920}
       />
     </>
   );
