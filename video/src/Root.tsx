@@ -4,7 +4,11 @@ import {
   calculateCaptionedVideoMetadata,
   captionedVideoSchema,
 } from "./CaptionedVideo";
-import { SOLDA_DURACAO, SoldaTikTok } from "./SoldaTikTok";
+import {
+  SOLDA_DURACAO,
+  SOLDA_DURACAO_NARRADO,
+  SoldaTikTok,
+} from "./SoldaTikTok";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -29,6 +33,15 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
+      />
+      <Composition
+        id="SoldaTikTokNarrado"
+        component={SoldaTikTok}
+        durationInFrames={SOLDA_DURACAO_NARRADO}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{ narracao: true }}
       />
     </>
   );

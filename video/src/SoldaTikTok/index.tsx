@@ -1,6 +1,7 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   cancelRender,
   continueRender,
   delayRender,
@@ -44,9 +45,12 @@ const PRETO = "#0B0B0B";
 
 // Duração de cada cena em quadros (30 quadros = 1 segundo)
 const CENAS = [90, 105, 120, 105, 90, 90];
-export const SOLDA_DURACAO = CENAS.reduce((a, b) => a + b, 0);
+// Com narração as cenas ficam mais longas, no tempo de cada fala
+const CENAS_NARRADO = [112, 162, 188, 110, 120, 105];
 
-const inicio = (i: number) => CENAS.slice(0, i).reduce((a, b) => a + b, 0);
+const soma = (lista: number[]) => lista.reduce((a, b) => a + b, 0);
+export const SOLDA_DURACAO = soma(CENAS);
+export const SOLDA_DURACAO_NARRADO = soma(CENAS_NARRADO);
 
 const useEntrada = (atraso = 0) => {
   const frame = useCurrentFrame();
@@ -260,7 +264,10 @@ const Final: React.FC = () => {
   );
 };
 
-export const SoldaTikTok: React.FC = () => {
+export const SoldaTikTok: React.FC<{ narracao?: boolean }> = ({
+  narracao = false,
+}) => {
+  const duracoes = narracao ? CENAS_NARRADO : CENAS;
   const cenas = [
     <Cena
       img="solda/2.jpg"
@@ -298,8 +305,17 @@ export const SoldaTikTok: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: PRETO }}>
       {cenas.map((c, i) => (
-        <Sequence key={i} from={inicio(i)} durationInFrames={CENAS[i]}>
+        <Sequence
+          key={i}
+          from={soma(duracoes.slice(0, i))}
+          durationInFrames={duracoes[i]}
+        >
           {c}
+          {narracao ? (
+            <Sequence from={6}>
+              <Audio src={staticFile(`narracao/${i + 1}.wav`)} volume={1.7} />
+            </Sequence>
+          ) : null}
         </Sequence>
       ))}
     </AbsoluteFill>
