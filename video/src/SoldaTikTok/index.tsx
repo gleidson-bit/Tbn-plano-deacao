@@ -42,11 +42,12 @@ const TAMANHOS: Record<string, [number, number]> = {
 
 const AMARELO = "#FFE01B";
 const PRETO = "#0B0B0B";
+const LARANJA = "#FF6A00";
 
 // Duração de cada cena em quadros (30 quadros = 1 segundo)
 const CENAS = [90, 105, 120, 105, 90, 90];
 // Com narração as cenas ficam mais longas, no tempo de cada fala
-const CENAS_NARRADO = [112, 162, 188, 110, 120, 105];
+const CENAS_NARRADO = [112, 162, 188, 110, 120, 120];
 
 const soma = (lista: number[]) => lista.reduce((a, b) => a + b, 0);
 export const SOLDA_DURACAO = soma(CENAS);
@@ -250,15 +251,29 @@ const Final: React.FC = () => {
       <div
         style={{
           marginTop: 60,
-          fontSize: 76,
-          background: PRETO,
+          fontSize: 60,
+          lineHeight: 1.1,
+          background: LARANJA,
           color: "white",
-          padding: "20px 50px",
-          borderRadius: 999,
+          padding: "24px 50px",
+          borderRadius: 40,
+          border: `6px solid ${PRETO}`,
+          display: "flex",
+          alignItems: "center",
+          gap: 30,
+          textAlign: "left",
           transform: `scale(${p2 * pulso})`,
         }}
       >
-        LINK NO PERFIL
+        {/* Ícone de carrinho de compras */}
+        <svg width="110" height="110" viewBox="0 0 24 24" fill="white">
+          <path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM1 2v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7l1.1-2h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1Z" />
+        </svg>
+        <div>
+          LINK NO
+          <br />
+          CARRINHO LARANJA
+        </div>
       </div>
     </AbsoluteFill>
   );
