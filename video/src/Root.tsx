@@ -11,6 +11,7 @@ import {
   SoldaOferta,
   SoldaTikTok,
 } from "./SoldaTikTok";
+import { WifiCamera } from "./WifiCamera";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -49,6 +50,14 @@ export const RemotionRoot: React.FC = () => {
         id="SoldaOferta"
         component={SoldaOferta}
         durationInFrames={SOLDA_OFERTA_DURACAO}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="WifiCamera"
+        component={WifiCamera}
+        durationInFrames={229}
         fps={30}
         width={1080}
         height={1920}

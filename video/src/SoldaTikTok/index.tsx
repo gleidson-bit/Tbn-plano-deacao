@@ -29,7 +29,7 @@ fonte
   })
   .catch((err) => cancelRender(err));
 
-const FONTE = { fontFamily, fontWeight: 900 } as const;
+export const FONTE = { fontFamily, fontWeight: 900 } as const;
 
 // Tamanho original de cada foto (largura x altura)
 const TAMANHOS: Record<string, [number, number]> = {
