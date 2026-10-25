@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apuração Presidente 2026</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --card: #ffffff; --txt: #16202c; --sub: #5b6676; --line: #e1e6ed;
+    --a: #c8102e; --b: #1f4fbf; --ok: #138a43;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f141b; --card: #18202b; --txt: #eef2f7; --sub: #9aa6b6; --line: #2a3442; --a: #ff4d63; --b: #5b8cff; --ok: #34c46e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--sub); font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 16px; }
+  .prog-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .bar { height: 12px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+  .bar > div { height: 100%; background: var(--ok); width: 0; transition: width .6s; }
+  .cand { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+  .cand:first-child { border-top: 0; }
+  .foto { width: 64px; height: 64px; border-radius: 50%; background: var(--line); object-fit: cover; }
+  .nome { font-weight: 700; font-size: 18px; }
+  .partido { color: var(--sub); font-size: 13px; }
+  .pct { font-size: 30px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+  .votos { color: var(--sub); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  .cbar { grid-column: 1 / -1; height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .cbar > div { height: 100%; transition: width .6s; }
+  .eleito { display: inline-block; background: var(--ok); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid div { background: var(--bg); border-radius: 10px; padding: 10px; }
+  .grid b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .grid span { color: var(--sub); font-size: 12px; }
+  .status { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--sub); margin-top: 14px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 6px; animation: pisca 1.4s infinite; }
+  .erro { color: var(--a); }
+  @keyframes pisca { 50% { opacity: .25; } }
+  button { background: var(--txt); color: var(--bg); border: 0; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .cand { grid-template-columns: 48px 1fr auto; }
+    .foto { width: 48px; height: 48px; }
+    .pct { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Apuração – Presidente 2026 (2º turno)</h1>
+  <div class="sub">Dados oficiais do TSE · atualiza sozinho a cada 15 segundos</div>
+
+  <section class="card">
+    <div class="prog-top">
+      <span class="sub">Urnas apuradas</span>
+      <span class="big" id="pst">–</span>
+    </div>
+    <div class="bar"><div id="pstBar"></div></div>
+    <div class="sub" id="secoes" style="margin-top:8px">&nbsp;</div>
+  </section>
+
+  <section class="card" id="cands"><div class="sub">Carregando dados do TSE…</div></section>
+
+  <section class="card">
+    <div class="grid">
+      <div><b id="vv">–</b><span>Votos válidos</span></div>
+      <div><b id="vb">–</b><span>Brancos</span></div>
+      <div><b id="vn">–</b><span>Nulos</span></div>
+      <div><b id="te">–</b><span>Eleitores</span></div>
+      <div><b id="c">–</b><span>Compareceram</span></div>
+      <div><b id="a">–</b><span>Abstenção</span></div>
+    </div>
+  </section>
+
+  <div class="status">
+    <span id="status"><span class="dot"></span>Conectando…</span>
+    <span>Próxima atualização em <b id="conta">15</b>s <button id="agora">Atualizar agora</button></span>
+  </div>
+</main>
+
+<script>
+  // 2º turno = 6258 · 1º turno = 6257 (pode trocar pela URL: apuracao.html?eleicao=6257)
+  const ELEICAO = new URLSearchParams(location.search).get("eleicao") || "6258";
+  const COD = String(ELEICAO).padStart(6, "0");
+  const BASE = `https://resultados.tse.jus.br/oficial/ele2026/${ELEICAO}`;
+  const URL_TSE = `${BASE}/dados/br/br-c0001-e${COD}-u.json`;
+  const URL_PROXY = `/api/apuracao?eleicao=${ELEICAO}`;
+  const INTERVALO = 15;
+  const CORES = ["var(--a)", "var(--b)", "#8a5cf6", "#e08a00"];
+
+  const $ = (id) => document.getElementById(id);
+  const num = (v) => {
+    if (typeof v === "number") return v;
+    const s = String(v ?? "").trim();
+    if (!s) return 0;
+    return s.includes(",") ? parseFloat(s.replace(/\./g, "").replace(",", ".")) : parseFloat(s);
+  };
+  const fmt = (n) => Math.round(n || 0).toLocaleString("pt-BR");
+  const pct = (n) => (n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+
+  // Procura os candidatos em qualquer nível do arquivo (o formato do TSE muda de eleição para eleição)
+  function acharCandidatos(obj, partido, lista, vistos) {
+    if (Array.isArray(obj)) { obj.forEach((o) => acharCandidatos(o, partido, lista, vistos)); return; }
+    if (!obj || typeof obj !== "object") return;
+    if ("vap" in obj && (obj.nmu || obj.nm)) {
+      if (!vistos.has(obj.n)) {
+        vistos.add(obj.n);
+        lista.push({ n: obj.n, nome: obj.nmu || obj.nm, partido, sq: obj.sqcand, votos: num(obj.vap), p: num(obj.pvap), eleito: obj.e === "s" || obj.e === "S" });
+      }
+      return;
+    }
+    const sg = obj.sg || partido;
+    for (const k in obj) if (typeof obj[k] === "object") acharCandidatos(obj[k], sg, lista, vistos);
+  }
+
+  let usarProxy = false;
+  let ultimaHora = "";
+
+  async function buscar() {
+    const opc = { cache: "no-store" };
+    if (!usarProxy) {
+      try {
+        const r = await fetch(URL_TSE + "?t=" + Date.now(), opc);
+        if (r.ok) return r.json();
+        if (r.status === 404) throw new Error("O TSE ainda não liberou os resultados.");
+      } catch (e) {
+        if (e.message.startsWith("O TSE")) throw e;
+        usarProxy = true; // navegador bloqueou: tenta pelo servidor da Vercel
+      }
+    }
+    const r = await fetch(URL_PROXY + "&t=" + Date.now(), opc);
+    if (r.status === 404) throw new Error("O TSE ainda não liberou os resultados.");
+    if (!r.ok) throw new Error("Falha ao buscar dados (" + r.status + ").");
+    return r.json();
+  }
+
+  function desenhar(d) {
+    const cargo = Array.isArray(d.carg) ? (d.carg.find((c) => String(c.cd) === "1") || d.carg) : d.carg || d;
+    const lista = [];
+    acharCandidatos(cargo, "", lista, new Set());
+    lista.sort((x, y) => y.votos - x.votos);
+
+    const s = d.s || {}, e = d.e || {}, v = d.v || {};
+    const pst = num(s.pst ?? d.pst);
+    $("pst").textContent = pct(pst);
+    $("pstBar").style.width = Math.min(pst, 100) + "%";
+    $("secoes").textContent = s.st ? `${fmt(num(s.st))} de ${fmt(num(s.ts))} seções totalizadas` : "";
+
+    const finalizado = d.tf === "s" || d.md === "e";
+    $("cands").innerHTML = lista.length ? lista.map((c, i) => `
+      <div class="cand">
+        <img class="foto" alt="" src="${c.sq ? `${BASE}/fotos/br/${c.sq}.jpeg` : ""}" onerror="this.style.visibility='hidden'">
+        <div>
+          <div class="nome">${c.nome}${c.eleito ? '<span class="eleito">ELEITO</span>' : ""}</div>
+          <div class="partido">${c.n ? c.n + " · " : ""}${c.partido}</div>
+        </div>
+        <div>
+          <div class="pct">${pct(c.p)}</div>
+          <div class="votos">${fmt(c.votos)} votos</div>
+        </div>
+        <div class="cbar"><div style="width:${Math.min(c.p, 100)}%;background:${CORES[i] || "var(--sub)"}"></div></div>
+      </div>`).join("") : '<div class="sub">Sem candidatos no arquivo ainda.</div>';
+
+    $("vv").textContent = fmt(num(v.vv));
+    $("vb").textContent = fmt(num(v.vb)) + (v.pvb ? " (" + pct(num(v.pvb)) + ")" : "");
+    $("vn").textContent = fmt(num(v.tvn ?? v.vn)) + (v.ptvn ? " (" + pct(num(v.ptvn)) + ")" : "");
+    $("te").textContent = fmt(num(e.te));
+    $("c").textContent = fmt(num(e.c));
+    $("a").textContent = fmt(num(e.a)) + (e.pa ? " (" + pct(num(e.pa)) + ")" : "");
+
+    ultimaHora = [d.dg, d.hg].filter(Boolean).join(" às ");
+    $("status").innerHTML = finalizado
+      ? `<b>Apuração encerrada</b>${ultimaHora ? " · " + ultimaHora : ""}`
+      : `<span class="dot"></span>Ao vivo${ultimaHora ? " · TSE atualizou em " + ultimaHora : ""}`;
+  }
+
+  let restante = INTERVALO;
+  async function atualizar() {
+    restante = INTERVALO;
+    try {
+      desenhar(await buscar());
+    } catch (err) {
+      $("status").innerHTML = `<span class="erro">${err.message}</span>${ultimaHora ? " · último dado: " + ultimaHora : ""}`;
+    }
+  }
+
+  $("agora").onclick = atualizar;
+  setInterval(() => {
+    restante -= 1;
+    if (restante <= 0) atualizar();
+    $("conta").textContent = Math.max(restante, 0);
+  }, 1000);
+  atualizar();
+</script>
+</body>
+</html>
