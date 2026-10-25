@@ -154,8 +154,10 @@
   const pct = (n) => (n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
   const curto = (nome) => nome.split(" ").slice(0, 2).join(" ");
 
-  // Cor fixa por número do candidato (menor número = primeira cor), igual nas duas abas
+  // Cor fixa por número do candidato, igual nas duas abas, não importa quem está na frente
+  const COR_FIXA = { 13: "var(--a)", 22: "var(--b)" }; // 13 = Lula (vermelho) · 22 = Flávio (azul)
   const corDe = (n, lista) => {
+    if (COR_FIXA[Number(n)]) return COR_FIXA[Number(n)];
     const nums = lista.map((c) => Number(c.n)).sort((x, y) => x - y);
     return CORES[nums.indexOf(Number(n))] || "var(--sub)";
   };
