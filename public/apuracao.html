@@ -41,6 +41,28 @@
   .erro { color: var(--a); }
   @keyframes pisca { 50% { opacity: .25; } }
   button { background: var(--txt); color: var(--bg); border: 0; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+
+  .abas { display: flex; gap: 6px; margin-top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+  .abas button { flex: 1; background: transparent; color: var(--sub); font-size: 15px; font-weight: 600; padding: 10px; }
+  .abas button.ativa { background: var(--txt); color: var(--bg); }
+  .placar { display: flex; gap: 10px; flex-wrap: wrap; }
+  .placar div { flex: 1; min-width: 140px; background: var(--bg); border-radius: 10px; padding: 10px; border-left: 5px solid; }
+  .placar b { display: block; font-size: 22px; }
+  .placar span { color: var(--sub); font-size: 12px; }
+  .ordem { display: flex; gap: 8px; align-items: center; margin-top: 14px; font-size: 13px; color: var(--sub); }
+  .ordem select { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--txt); }
+  .uf { padding: 12px 0; border-top: 1px solid var(--line); }
+  .uf:first-child { border-top: 0; }
+  .uf-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .uf-nome { font-weight: 700; }
+  .uf-nome small { color: var(--sub); font-weight: 400; margin-left: 4px; }
+  .uf-apur { color: var(--sub); font-size: 12px; white-space: nowrap; }
+  .split { display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: var(--line); margin: 8px 0 6px; }
+  .split div { height: 100%; transition: width .6s; }
+  .uf-pcts { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .uf-pcts span b { font-size: 15px; }
+  .uf-sem { color: var(--sub); font-size: 13px; margin-top: 6px; }
+
   @media (max-width: 480px) {
     .grid { grid-template-columns: 1fr 1fr; }
     .cand { grid-template-columns: 48px 1fr auto; }
@@ -52,29 +74,52 @@
 <body>
 <main>
   <h1>Apuração – Presidente 2026 (2º turno)</h1>
-  <div class="sub">Dados oficiais do TSE · atualiza sozinho a cada 15 segundos</div>
+  <div class="sub">Dados oficiais do TSE · atualiza sozinho</div>
 
-  <section class="card">
-    <div class="prog-top">
-      <span class="sub">Urnas apuradas</span>
-      <span class="big" id="pst">–</span>
-    </div>
-    <div class="bar"><div id="pstBar"></div></div>
-    <div class="sub" id="secoes" style="margin-top:8px">&nbsp;</div>
-  </section>
+  <nav class="abas">
+    <button id="abaBr" class="ativa">Brasil</button>
+    <button id="abaUf">Por estado</button>
+  </nav>
 
-  <section class="card" id="cands"><div class="sub">Carregando dados do TSE…</div></section>
+  <div id="telaBr">
+    <section class="card">
+      <div class="prog-top">
+        <span class="sub">Urnas apuradas</span>
+        <span class="big" id="pst">–</span>
+      </div>
+      <div class="bar"><div id="pstBar"></div></div>
+      <div class="sub" id="secoes" style="margin-top:8px">&nbsp;</div>
+    </section>
 
-  <section class="card">
-    <div class="grid">
-      <div><b id="vv">–</b><span>Votos válidos</span></div>
-      <div><b id="vb">–</b><span>Brancos</span></div>
-      <div><b id="vn">–</b><span>Nulos</span></div>
-      <div><b id="te">–</b><span>Eleitores</span></div>
-      <div><b id="c">–</b><span>Compareceram</span></div>
-      <div><b id="a">–</b><span>Abstenção</span></div>
-    </div>
-  </section>
+    <section class="card" id="cands"><div class="sub">Carregando dados do TSE…</div></section>
+
+    <section class="card">
+      <div class="grid">
+        <div><b id="vv">–</b><span>Votos válidos</span></div>
+        <div><b id="vb">–</b><span>Brancos</span></div>
+        <div><b id="vn">–</b><span>Nulos</span></div>
+        <div><b id="te">–</b><span>Eleitores</span></div>
+        <div><b id="c">–</b><span>Compareceram</span></div>
+        <div><b id="a">–</b><span>Abstenção</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="telaUf" hidden>
+    <section class="card">
+      <div class="placar" id="placar"><span class="sub">Carregando estados…</span></div>
+      <div class="ordem">
+        Ordenar por
+        <select id="ordem">
+          <option value="eleitores">Mais eleitores</option>
+          <option value="nome">Nome do estado</option>
+          <option value="diferenca">Disputa mais apertada</option>
+          <option value="apuradas">Mais urnas apuradas</option>
+        </select>
+      </div>
+    </section>
+    <section class="card" id="ufs"></section>
+  </div>
 
   <div class="status">
     <span id="status"><span class="dot"></span>Conectando…</span>
@@ -87,10 +132,16 @@
   const ELEICAO = new URLSearchParams(location.search).get("eleicao") || "6258";
   const COD = String(ELEICAO).padStart(6, "0");
   const BASE = `https://resultados.tse.jus.br/oficial/ele2026/${ELEICAO}`;
-  const URL_TSE = `${BASE}/dados/br/br-c0001-e${COD}-u.json`;
-  const URL_PROXY = `/api/apuracao?eleicao=${ELEICAO}`;
-  const INTERVALO = 15;
+  const INTERVALO_BR = 15;
+  const INTERVALO_UF = 60; // são 27 arquivos, então os estados atualizam com menos pressa
   const CORES = ["var(--a)", "var(--b)", "#8a5cf6", "#e08a00"];
+  const ESTADOS = {
+    ac: "Acre", al: "Alagoas", ap: "Amapá", am: "Amazonas", ba: "Bahia", ce: "Ceará", df: "Distrito Federal",
+    es: "Espírito Santo", go: "Goiás", ma: "Maranhão", mt: "Mato Grosso", ms: "Mato Grosso do Sul",
+    mg: "Minas Gerais", pa: "Pará", pb: "Paraíba", pr: "Paraná", pe: "Pernambuco", pi: "Piauí",
+    rj: "Rio de Janeiro", rn: "Rio Grande do Norte", rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima",
+    sc: "Santa Catarina", sp: "São Paulo", se: "Sergipe", to: "Tocantins",
+  };
 
   const $ = (id) => document.getElementById(id);
   const num = (v) => {
@@ -101,6 +152,15 @@
   };
   const fmt = (n) => Math.round(n || 0).toLocaleString("pt-BR");
   const pct = (n) => (n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+  const curto = (nome) => nome.split(" ").slice(0, 2).join(" ");
+
+  // Cor fixa por número do candidato, igual nas duas abas, não importa quem está na frente
+  const COR_FIXA = { 13: "var(--a)", 22: "var(--b)" }; // 13 = Lula (vermelho) · 22 = Flávio (azul)
+  const corDe = (n, lista) => {
+    if (COR_FIXA[Number(n)]) return COR_FIXA[Number(n)];
+    const nums = lista.map((c) => Number(c.n)).sort((x, y) => x - y);
+    return CORES[nums.indexOf(Number(n))] || "var(--sub)";
+  };
 
   // Procura os candidatos em qualquer nível do arquivo (o formato do TSE muda de eleição para eleição)
   function acharCandidatos(obj, partido, lista, vistos) {
@@ -117,14 +177,22 @@
     for (const k in obj) if (typeof obj[k] === "object") acharCandidatos(obj[k], sg, lista, vistos);
   }
 
-  let usarProxy = false;
-  let ultimaHora = "";
+  function ler(d) {
+    const cargo = Array.isArray(d.carg) ? (d.carg.find((c) => String(c.cd) === "1") || d.carg) : d.carg || d;
+    const lista = [];
+    acharCandidatos(cargo, "", lista, new Set());
+    lista.sort((x, y) => y.votos - x.votos);
+    return { lista, s: d.s || {}, e: d.e || {}, v: d.v || {}, pst: num((d.s || {}).pst ?? d.pst) };
+  }
 
-  async function buscar() {
+  let usarProxy = false;
+  async function buscar(uf) {
     const opc = { cache: "no-store" };
+    const direto = `${BASE}/dados/${uf}/${uf}-c0001-e${COD}-u.json`;
+    const proxy = `/api/apuracao?eleicao=${ELEICAO}&uf=${uf}`;
     if (!usarProxy) {
       try {
-        const r = await fetch(URL_TSE + "?t=" + Date.now(), opc);
+        const r = await fetch(direto + "?t=" + Date.now(), opc);
         if (r.ok) return r.json();
         if (r.status === 404) throw new Error("O TSE ainda não liberou os resultados.");
       } catch (e) {
@@ -132,26 +200,24 @@
         usarProxy = true; // navegador bloqueou: tenta pelo servidor da Vercel
       }
     }
-    const r = await fetch(URL_PROXY + "&t=" + Date.now(), opc);
+    const r = await fetch(proxy + "&t=" + Date.now(), opc);
     if (r.status === 404) throw new Error("O TSE ainda não liberou os resultados.");
     if (!r.ok) throw new Error("Falha ao buscar dados (" + r.status + ").");
     return r.json();
   }
 
-  function desenhar(d) {
-    const cargo = Array.isArray(d.carg) ? (d.carg.find((c) => String(c.cd) === "1") || d.carg) : d.carg || d;
-    const lista = [];
-    acharCandidatos(cargo, "", lista, new Set());
-    lista.sort((x, y) => y.votos - x.votos);
+  // ---------- Aba Brasil ----------
+  let nacional = [];
+  let ultimaHora = "";
 
-    const s = d.s || {}, e = d.e || {}, v = d.v || {};
-    const pst = num(s.pst ?? d.pst);
+  function desenharBrasil(d) {
+    const { lista, s, e, v, pst } = ler(d);
+    nacional = lista;
     $("pst").textContent = pct(pst);
     $("pstBar").style.width = Math.min(pst, 100) + "%";
     $("secoes").textContent = s.st ? `${fmt(num(s.st))} de ${fmt(num(s.ts))} seções totalizadas` : "";
 
-    const finalizado = d.tf === "s" || d.md === "e";
-    $("cands").innerHTML = lista.length ? lista.map((c, i) => `
+    $("cands").innerHTML = lista.length ? lista.map((c) => `
       <div class="cand">
         <img class="foto" alt="" src="${c.sq ? `${BASE}/fotos/br/${c.sq}.jpeg` : ""}" onerror="this.style.visibility='hidden'">
         <div>
@@ -162,7 +228,7 @@
           <div class="pct">${pct(c.p)}</div>
           <div class="votos">${fmt(c.votos)} votos</div>
         </div>
-        <div class="cbar"><div style="width:${Math.min(c.p, 100)}%;background:${CORES[i] || "var(--sub)"}"></div></div>
+        <div class="cbar"><div style="width:${Math.min(c.p, 100)}%;background:${corDe(c.n, lista)}"></div></div>
       </div>`).join("") : '<div class="sub">Sem candidatos no arquivo ainda.</div>';
 
     $("vv").textContent = fmt(num(v.vv));
@@ -172,20 +238,99 @@
     $("c").textContent = fmt(num(e.c));
     $("a").textContent = fmt(num(e.a)) + (e.pa ? " (" + pct(num(e.pa)) + ")" : "");
 
+    const finalizado = d.tf === "s" || d.md === "e";
     ultimaHora = [d.dg, d.hg].filter(Boolean).join(" às ");
     $("status").innerHTML = finalizado
       ? `<b>Apuração encerrada</b>${ultimaHora ? " · " + ultimaHora : ""}`
       : `<span class="dot"></span>Ao vivo${ultimaHora ? " · TSE atualizou em " + ultimaHora : ""}`;
   }
 
-  let restante = INTERVALO;
+  // ---------- Aba Por estado ----------
+  const estados = {}; // uf -> { lista, pst, te } ou { erro }
+
+  async function buscarEstados() {
+    const ufs = Object.keys(ESTADOS);
+    // 6 de cada vez para não sobrecarregar
+    for (let i = 0; i < ufs.length; i += 6) {
+      await Promise.all(ufs.slice(i, i + 6).map(async (uf) => {
+        try {
+          const r = ler(await buscar(uf));
+          estados[uf] = { lista: r.lista, pst: r.pst, te: num(r.e.te) };
+        } catch (e) {
+          if (!estados[uf]) estados[uf] = { erro: true };
+        }
+      }));
+      desenharEstados();
+    }
+  }
+
+  function desenharEstados() {
+    const refs = nacional.length ? nacional : (Object.values(estados).find((x) => x.lista?.length)?.lista || []);
+    const ordem = $("ordem").value;
+    const linhas = Object.keys(ESTADOS).map((uf) => {
+      const x = estados[uf] || {};
+      const lista = (x.lista || []).slice().sort((a, b) => b.votos - a.votos);
+      const dif = lista.length > 1 ? lista[0].p - lista[1].p : 999;
+      return { uf, nome: ESTADOS[uf], lista, pst: x.pst || 0, te: x.te || 0, dif, carregado: !!x.lista, erro: x.erro };
+    });
+    const cmp = {
+      eleitores: (a, b) => b.te - a.te || a.nome.localeCompare(b.nome),
+      nome: (a, b) => a.nome.localeCompare(b.nome),
+      diferenca: (a, b) => a.dif - b.dif,
+      apuradas: (a, b) => b.pst - a.pst,
+    }[ordem];
+    linhas.sort(cmp);
+
+    // Placar: em quantos estados cada candidato está na frente
+    const vence = {};
+    linhas.forEach((l) => { if (l.lista.length && l.lista[0].votos > 0) vence[l.lista[0].n] = (vence[l.lista[0].n] || 0) + 1; });
+    $("placar").innerHTML = refs.length
+      ? refs.slice().sort((a, b) => Number(a.n) - Number(b.n)).map((c) => `
+          <div style="border-color:${corDe(c.n, refs)}">
+            <b>${vence[c.n] || 0}</b><span>estados com ${curto(c.nome)} na frente</span>
+          </div>`).join("")
+      : '<span class="sub">Carregando estados…</span>';
+
+    $("ufs").innerHTML = linhas.map((l) => {
+      const cabeca = `<div class="uf-top"><span class="uf-nome">${l.nome}<small>${l.uf.toUpperCase()}</small></span>
+        <span class="uf-apur">${l.carregado ? pct(l.pst) + " apuradas" : ""}</span></div>`;
+      if (!l.carregado) return `<div class="uf">${cabeca}<div class="uf-sem">${l.erro ? "Sem dados ainda" : "Carregando…"}</div></div>`;
+      const porNumero = l.lista.slice().sort((a, b) => Number(a.n) - Number(b.n));
+      const total = porNumero.reduce((s, c) => s + c.p, 0) || 1;
+      return `<div class="uf">${cabeca}
+        <div class="split">${porNumero.map((c) => `<div style="width:${(c.p / total) * 100}%;background:${corDe(c.n, refs.length ? refs : porNumero)}"></div>`).join("")}</div>
+        <div class="uf-pcts">${porNumero.map((c) => `<span>${curto(c.nome)} <b>${pct(c.p)}</b></span>`).join("")}</div>
+      </div>`;
+    }).join("");
+  }
+
+  // ---------- Abas e relógio ----------
+  let aba = "br";
+  function trocarAba(nova) {
+    aba = nova;
+    $("abaBr").classList.toggle("ativa", aba === "br");
+    $("abaUf").classList.toggle("ativa", aba === "uf");
+    $("telaBr").hidden = aba !== "br";
+    $("telaUf").hidden = aba !== "uf";
+    atualizar();
+  }
+  $("abaBr").onclick = () => trocarAba("br");
+  $("abaUf").onclick = () => trocarAba("uf");
+  $("ordem").onchange = desenharEstados;
+
+  let restante = INTERVALO_BR;
+  let ocupado = false;
   async function atualizar() {
-    restante = INTERVALO;
+    if (ocupado) return;
+    ocupado = true;
+    restante = aba === "uf" ? INTERVALO_UF : INTERVALO_BR;
     try {
-      desenhar(await buscar());
+      desenharBrasil(await buscar("br"));
+      if (aba === "uf") await buscarEstados();
     } catch (err) {
       $("status").innerHTML = `<span class="erro">${err.message}</span>${ultimaHora ? " · último dado: " + ultimaHora : ""}`;
     }
+    ocupado = false;
   }
 
   $("agora").onclick = atualizar;
