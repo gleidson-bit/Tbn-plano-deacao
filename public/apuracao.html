@@ -62,6 +62,15 @@
   .uf-pcts { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
   .uf-pcts span b { font-size: 15px; }
   .uf-sem { color: var(--sub); font-size: 13px; margin-top: 6px; }
+  .reg { padding: 16px 0; border-top: 1px solid var(--line); }
+  .reg:first-child { border-top: 0; padding-top: 0; }
+  .reg-nome { font-size: 18px; font-weight: 700; }
+  .reg-ufs { color: var(--sub); font-size: 12px; margin-top: 2px; }
+  .reg-cands { display: flex; justify-content: space-between; gap: 8px; }
+  .reg-cands div:last-child { text-align: right; }
+  .reg-cands b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .reg-cands span { color: var(--sub); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .reg-dif { font-size: 13px; margin-top: 6px; }
 
   @media (max-width: 480px) {
     .grid { grid-template-columns: 1fr 1fr; }
@@ -79,6 +88,7 @@
   <nav class="abas">
     <button id="abaBr" class="ativa">Brasil</button>
     <button id="abaUf">Por estado</button>
+    <button id="abaReg">Por região</button>
   </nav>
 
   <div id="telaBr">
@@ -121,6 +131,10 @@
     <section class="card" id="ufs"></section>
   </div>
 
+  <div id="telaReg" hidden>
+    <section class="card" id="regioes"><div class="sub">Carregando regiões…</div></section>
+  </div>
+
   <div class="status">
     <span id="status"><span class="dot"></span>Conectando…</span>
     <span>Próxima atualização em <b id="conta">15</b>s <button id="agora">Atualizar agora</button></span>
@@ -141,6 +155,13 @@
     mg: "Minas Gerais", pa: "Pará", pb: "Paraíba", pr: "Paraná", pe: "Pernambuco", pi: "Piauí",
     rj: "Rio de Janeiro", rn: "Rio Grande do Norte", rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima",
     sc: "Santa Catarina", sp: "São Paulo", se: "Sergipe", to: "Tocantins",
+  };
+  const REGIOES = {
+    "Norte": ["ac", "ap", "am", "pa", "ro", "rr", "to"],
+    "Nordeste": ["al", "ba", "ce", "ma", "pb", "pe", "pi", "rn", "se"],
+    "Centro-Oeste": ["df", "go", "mt", "ms"],
+    "Sudeste": ["es", "mg", "rj", "sp"],
+    "Sul": ["pr", "rs", "sc"],
   };
 
   const $ = (id) => document.getElementById(id);
@@ -255,13 +276,46 @@
       await Promise.all(ufs.slice(i, i + 6).map(async (uf) => {
         try {
           const r = ler(await buscar(uf));
-          estados[uf] = { lista: r.lista, pst: r.pst, te: num(r.e.te) };
+          estados[uf] = { lista: r.lista, pst: r.pst, te: num(r.e.te), st: num(r.s.st), ts: num(r.s.ts) };
         } catch (e) {
           if (!estados[uf]) estados[uf] = { erro: true };
         }
       }));
       desenharEstados();
+      desenharRegioes();
     }
+  }
+
+  // ---------- Aba Por região (soma dos estados) ----------
+  function desenharRegioes() {
+    const refs = nacional.length ? nacional : (Object.values(estados).find((x) => x.lista?.length)?.lista || []);
+    $("regioes").innerHTML = Object.entries(REGIOES).map(([nome, ufs]) => {
+      const votos = {}, cands = {};
+      let st = 0, ts = 0, carregados = 0;
+      ufs.forEach((uf) => {
+        const x = estados[uf];
+        if (!x || !x.lista) return;
+        carregados++;
+        st += x.st; ts += x.ts;
+        x.lista.forEach((c) => { votos[c.n] = (votos[c.n] || 0) + c.votos; cands[c.n] = c; });
+      });
+      const siglas = ufs.map((u) => u.toUpperCase()).join(" · ");
+      const cabeca = `<div class="uf-top"><span class="reg-nome">${nome}</span>
+        <span class="uf-apur">${ts ? pct((st / ts) * 100) + " apuradas" : ""}</span></div>
+        <div class="reg-ufs">${siglas}${carregados < ufs.length ? ` · ${carregados} de ${ufs.length} estados com dados` : ""}</div>`;
+      const total = Object.values(votos).reduce((s, v) => s + v, 0);
+      if (!total) return `<div class="reg">${cabeca}<div class="uf-sem">${carregados ? "Sem votos apurados ainda" : "Carregando…"}</div></div>`;
+
+      const porNumero = Object.keys(votos).map((n) => ({ ...cands[n], votos: votos[n], p: (votos[n] / total) * 100 }))
+        .sort((a, b) => Number(a.n) - Number(b.n));
+      const lider = porNumero.slice().sort((a, b) => b.votos - a.votos);
+      const dif = lider.length > 1 ? lider[0].votos - lider[1].votos : 0;
+      return `<div class="reg">${cabeca}
+        <div class="split">${porNumero.map((c) => `<div style="width:${c.p}%;background:${corDe(c.n, refs.length ? refs : porNumero)}"></div>`).join("")}</div>
+        <div class="reg-cands">${porNumero.map((c) => `<div><span>${curto(c.nome)}</span><b>${pct(c.p)}</b><span>${fmt(c.votos)} votos</span></div>`).join("")}</div>
+        ${dif ? `<div class="reg-dif">${curto(lider[0].nome)} na frente por <b>${fmt(dif)}</b> votos</div>` : ""}
+      </div>`;
+    }).join("");
   }
 
   function desenharEstados() {
@@ -310,12 +364,15 @@
     aba = nova;
     $("abaBr").classList.toggle("ativa", aba === "br");
     $("abaUf").classList.toggle("ativa", aba === "uf");
+    $("abaReg").classList.toggle("ativa", aba === "reg");
     $("telaBr").hidden = aba !== "br";
     $("telaUf").hidden = aba !== "uf";
+    $("telaReg").hidden = aba !== "reg";
     atualizar();
   }
   $("abaBr").onclick = () => trocarAba("br");
   $("abaUf").onclick = () => trocarAba("uf");
+  $("abaReg").onclick = () => trocarAba("reg");
   $("ordem").onchange = desenharEstados;
 
   let restante = INTERVALO_BR;
@@ -323,10 +380,10 @@
   async function atualizar() {
     if (ocupado) return;
     ocupado = true;
-    restante = aba === "uf" ? INTERVALO_UF : INTERVALO_BR;
+    restante = aba === "br" ? INTERVALO_BR : INTERVALO_UF;
     try {
       desenharBrasil(await buscar("br"));
-      if (aba === "uf") await buscarEstados();
+      if (aba !== "br") await buscarEstados();
     } catch (err) {
       $("status").innerHTML = `<span class="erro">${err.message}</span>${ultimaHora ? " · último dado: " + ultimaHora : ""}`;
     }
