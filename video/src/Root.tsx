@@ -13,6 +13,7 @@ import {
 } from "./SoldaTikTok";
 import { WifiCamera } from "./WifiCamera";
 import { FIBRA_DURACAO, FibraEditada } from "./FibraEditada";
+import { TBN_AVALIACAO_DURACAO, TbnAvaliacao } from "./TbnAvaliacao";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -67,6 +68,14 @@ export const RemotionRoot: React.FC = () => {
         id="FibraEditada"
         component={FibraEditada}
         durationInFrames={FIBRA_DURACAO}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="TbnAvaliacao"
+        component={TbnAvaliacao}
+        durationInFrames={TBN_AVALIACAO_DURACAO}
         fps={30}
         width={1080}
         height={1920}
