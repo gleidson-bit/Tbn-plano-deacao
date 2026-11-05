@@ -28,22 +28,21 @@ const useEntrada = (atraso: number, damping = 12) => {
   return spring({ frame: frame - atraso, fps, config: { damping } });
 };
 
-// Mostra um pedaço nítido da arte, no lugar exato, com animação de entrada
-const Pedaco: React.FC<{
+// Dá um "salto" de destaque num pedaço da arte, no lugar exato
+const Destaque: React.FC<{
   x: number;
   y: number;
   l: number;
   a: number;
   atraso: number;
-  efeito?: "subir" | "crescer" | "fade";
-}> = ({ x, y, l, a, atraso, efeito = "subir" }) => {
-  const p = useEntrada(atraso);
-  const transform =
-    efeito === "crescer"
-      ? `scale(${interpolate(p, [0, 1], [0.6, 1])})`
-      : efeito === "fade"
-        ? "none"
-        : `translateY(${interpolate(p, [0, 1], [40, 0])}px)`;
+  forca?: number;
+}> = ({ x, y, l, a, atraso, forca = 0.08 }) => {
+  const frame = useCurrentFrame();
+  const t = interpolate(frame, [atraso, atraso + 7, atraso + 22], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  if (t === 0) return null;
   return (
     <div
       style={{
@@ -53,8 +52,9 @@ const Pedaco: React.FC<{
         width: l,
         height: a,
         overflow: "hidden",
-        opacity: p,
-        transform,
+        borderRadius: 24,
+        transform: `scale(${1 + forca * t})`,
+        boxShadow: `0 ${20 * t}px ${50 * t}px rgba(0,0,0,${0.55 * t})`,
       }}
     >
       <Img
@@ -74,7 +74,7 @@ const Pedaco: React.FC<{
 // Abertura: zoom na fachada da sede
 const Abertura: React.FC = () => {
   const frame = useCurrentFrame();
-  const zoom = interpolate(frame, [0, 70], [2.15, 2.0]);
+  const zoom = interpolate(frame, [0, 70], [2.25, 2.12]);
   const p = useEntrada(4, 10);
   const sai = interpolate(frame, [58, 70], [1, 0], {
     extrapolateLeft: "clamp",
@@ -108,6 +108,10 @@ const Abertura: React.FC = () => {
           fontSize: 110,
           lineHeight: 1,
           transform: `scale(${p})`,
+          opacity: interpolate(frame, [44, 54], [1, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
           textShadow: "0 10px 40px rgba(0,0,0,0.6)",
         }}
       >
@@ -140,117 +144,72 @@ const Toque: React.FC<{ atraso: number }> = ({ atraso }) => {
 
 const Cartaz: React.FC = () => {
   const frame = useCurrentFrame();
-  const zoom = interpolate(frame, [0, TBN_CONHECA_DURACAO], [1, 1.04]);
+  const zoom = interpolate(frame, [0, TBN_CONHECA_DURACAO], [1, 1.05]);
   const f = (q: number) => q - 60; // tempos abaixo contam do início do vídeo
-  const pPreco = useEntrada(f(380), 9);
-  const pulsoPreco =
-    frame > f(395) ? 1 + Math.sin((frame - f(395)) / 5) * 0.025 : 1;
   const pBotao = useEntrada(f(462), 11);
-  const entra = interpolate(frame, [0, 12], [0, 1], {
-    extrapolateRight: "clamp",
-  });
 
   return (
-    <AbsoluteFill style={{ opacity: entra }}>
+    <AbsoluteFill>
       <AbsoluteFill style={{ transform: `scale(${zoom})` }}>
-        {/* Arte inteira apagada, de fundo */}
-        <Img
-          src={ARTE}
-          style={{
-            width: 1080,
-            height: 1920,
-            filter: "brightness(0.55) blur(3px)",
-          }}
-        />
+        {/* Arte inteira, sempre nítida */}
+        <Img src={ARTE} style={{ width: 1080, height: 1920 }} />
 
-        {/* Logo e "Conheça a TBN" */}
-        <Pedaco
-          x={70}
-          y={180}
-          l={560}
-          a={370}
-          atraso={f(60)}
-          efeito="crescer"
-        />
-        {/* Prédio à direita aparece junto */}
-        <Pedaco x={400} y={0} l={680} a={1160} atraso={f(62)} efeito="fade" />
-        {/* Frase */}
-        <Pedaco x={70} y={570} l={420} a={170} atraso={f(75)} />
-        {/* Serviços, um por vez */}
-        <Pedaco x={70} y={755} l={340} a={115} atraso={f(175)} />
-        <Pedaco x={70} y={875} l={340} a={115} atraso={f(198)} />
-        <Pedaco x={70} y={995} l={340} a={115} atraso={f(221)} />
-        {/* Moldura dos planos */}
-        <Pedaco
-          x={60}
-          y={1160}
-          l={960}
-          a={250}
-          atraso={f(268)}
-          efeito="crescer"
-        />
-        {/* Planos, um por vez */}
-        <Pedaco
+        {/* Destaques, um por vez */}
+        <Destaque x={70} y={290} l={540} a={260} atraso={f(70)} />
+        <Destaque x={70} y={570} l={420} a={170} atraso={f(110)} />
+        <Destaque x={70} y={755} l={340} a={115} atraso={f(170)} forca={0.12} />
+        <Destaque x={70} y={875} l={340} a={115} atraso={f(200)} forca={0.12} />
+        <Destaque x={70} y={995} l={340} a={115} atraso={f(230)} forca={0.12} />
+        <Destaque
           x={130}
           y={1255}
           l={180}
           a={150}
           atraso={f(280)}
-          efeito="crescer"
+          forca={0.15}
         />
-        <Pedaco
+        <Destaque
           x={350}
           y={1255}
           l={180}
           a={150}
-          atraso={f(298)}
-          efeito="crescer"
+          atraso={f(300)}
+          forca={0.15}
         />
-        <Pedaco
+        <Destaque
           x={565}
           y={1255}
           l={180}
           a={150}
-          atraso={f(318)}
-          efeito="crescer"
+          atraso={f(320)}
+          forca={0.15}
         />
-        <Pedaco
+        <Destaque
           x={785}
           y={1255}
           l={180}
           a={150}
           atraso={f(340)}
-          efeito="crescer"
+          forca={0.15}
+        />
+        <Destaque
+          x={170}
+          y={1405}
+          l={740}
+          a={130}
+          atraso={f(385)}
+          forca={0.12}
+        />
+        <Destaque
+          x={170}
+          y={1405}
+          l={740}
+          a={130}
+          atraso={f(410)}
+          forca={0.12}
         />
 
-        {/* Preço */}
-        <div
-          style={{
-            position: "absolute",
-            left: 160,
-            top: 1400,
-            width: 760,
-            height: 140,
-            overflow: "hidden",
-            opacity: pPreco,
-            transform: `scale(${interpolate(pPreco, [0, 1], [0.5, 1]) * pulsoPreco})`,
-          }}
-        >
-          <Img
-            src={ARTE}
-            style={{
-              position: "absolute",
-              left: -160,
-              top: -1400,
-              width: 1080,
-              height: 1920,
-            }}
-          />
-        </div>
-
-        {/* Fundo de baixo e botão */}
-        <Pedaco x={0} y={1540} l={1080} a={380} atraso={f(455)} efeito="fade" />
-        <Pedaco x={0} y={0} l={1080} a={1920} atraso={f(452)} efeito="fade" />
+        {/* Botão com o WhatsApp */}
         <div
           style={{
             position: "absolute",
@@ -294,7 +253,7 @@ export const TbnConheca: React.FC<{ narracao?: boolean }> = ({
   narracao = false,
 }) => (
   <AbsoluteFill style={{ backgroundColor: AZUL }}>
-    <Sequence from={60}>
+    <Sequence from={58}>
       <Cartaz />
     </Sequence>
     <Sequence durationInFrames={72}>
