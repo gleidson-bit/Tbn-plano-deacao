@@ -74,7 +74,7 @@ const Pedaco: React.FC<{
 // Abertura: zoom na fachada da sede
 const Abertura: React.FC = () => {
   const frame = useCurrentFrame();
-  const zoom = interpolate(frame, [0, 70], [2.8, 2.6]);
+  const zoom = interpolate(frame, [0, 70], [2.15, 2.0]);
   const p = useEntrada(4, 10);
   const sai = interpolate(frame, [58, 70], [1, 0], {
     extrapolateLeft: "clamp",
@@ -88,13 +88,13 @@ const Abertura: React.FC = () => {
           width: 1080,
           height: 1920,
           transform: `scale(${zoom})`,
-          transformOrigin: "855px 700px",
+          transformOrigin: "1000px 760px",
         }}
       />
       <AbsoluteFill
         style={{
           background:
-            "linear-gradient(rgba(14,38,57,0) 40%, rgba(14,38,57,0.9) 80%)",
+            "linear-gradient(rgba(14,38,57,0) 35%, rgba(14,38,57,0.92) 62%, #0E2639 74%)",
         }}
       />
       <div
@@ -159,7 +159,7 @@ const Cartaz: React.FC = () => {
           style={{
             width: 1080,
             height: 1920,
-            filter: "brightness(0.35) blur(5px)",
+            filter: "brightness(0.55) blur(3px)",
           }}
         />
 
@@ -250,6 +250,7 @@ const Cartaz: React.FC = () => {
 
         {/* Fundo de baixo e botão */}
         <Pedaco x={0} y={1540} l={1080} a={380} atraso={f(455)} efeito="fade" />
+        <Pedaco x={0} y={0} l={1080} a={1920} atraso={f(452)} efeito="fade" />
         <div
           style={{
             position: "absolute",
@@ -289,7 +290,9 @@ const Cartaz: React.FC = () => {
   );
 };
 
-export const TbnConheca: React.FC = () => (
+export const TbnConheca: React.FC<{ narracao?: boolean }> = ({
+  narracao = false,
+}) => (
   <AbsoluteFill style={{ backgroundColor: AZUL }}>
     <Sequence from={60}>
       <Cartaz />
@@ -297,7 +300,7 @@ export const TbnConheca: React.FC = () => (
     <Sequence durationInFrames={72}>
       <Abertura />
     </Sequence>
-    {FALAS.map((inicio, i) => (
+    {(narracao ? FALAS : []).map((inicio, i) => (
       <Sequence key={i} from={inicio}>
         <Audio src={staticFile(`narracao-conheca/${i + 1}.wav`)} volume={1.7} />
       </Sequence>
