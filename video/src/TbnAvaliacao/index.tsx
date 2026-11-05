@@ -23,7 +23,28 @@ const AVALIACOES = "+200 AVALIAÇÕES";
 const WHATSAPP = "(64) 99283-4153";
 
 // Duração de cada cena em quadros (30 quadros = 1 segundo), no tempo da narração
-const CENAS = [165, 101, 129, 100, 125, 186];
+const CENAS = [165, 210, 101, 129, 100, 125, 186];
+// Narração de cada cena, na mesma ordem
+const AUDIOS = ["1", "depoimentos", "2", "3", "4", "5", "6"];
+
+// Trechos de avaliações reais do Google (só o primeiro nome e a inicial)
+const DEPOIMENTOS = [
+  {
+    texto:
+      "Foi muito rápido o atendimento e a instalação. A internet é ótima. Super indico.",
+    nome: "Wennia C.",
+  },
+  {
+    texto:
+      "Fechei contrato hoje com a empresa! O atendimento foi desenrolado e ágil.",
+    nome: "Robson O.",
+  },
+  {
+    texto:
+      "Internet perfeita, muito rápida e com o ping muito baixo e estável.",
+    nome: "Roberto F.",
+  },
+];
 const soma = (l: number[]) => l.reduce((a, b) => a + b, 0);
 export const TBN_AVALIACAO_DURACAO = soma(CENAS);
 
@@ -215,6 +236,81 @@ const CenaNota: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+const CartaoDepoimento: React.FC<{
+  texto: string;
+  nome: string;
+  atraso: number;
+  topo: number;
+}> = ({ texto, nome, atraso, topo }) => {
+  const p = useEntrada(atraso, 12);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: topo,
+        left: 60,
+        right: 60,
+        background: BRANCO,
+        borderRadius: 32,
+        padding: "30px 40px",
+        boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+        opacity: p,
+        transform: `translateX(${interpolate(p, [0, 1], [300, 0])}px)`,
+      }}
+    >
+      <div style={{ display: "flex", gap: 6 }}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <svg key={i} width="44" height="44" viewBox="0 0 24 24">
+            <path d={CAMINHO_ESTRELA} fill="#FFC107" />
+          </svg>
+        ))}
+      </div>
+      <div
+        style={{
+          fontFamily: FONTE.fontFamily,
+          fontWeight: 900,
+          fontSize: 40,
+          lineHeight: 1.25,
+          color: AZUL,
+          marginTop: 14,
+        }}
+      >
+        “{texto}”
+      </div>
+      <div
+        style={{
+          ...FONTE,
+          fontSize: 32,
+          color: LARANJA,
+          marginTop: 14,
+        }}
+      >
+        {nome} · AVALIAÇÃO NO GOOGLE
+      </div>
+    </div>
+  );
+};
+
+// Cena: o que os clientes dizem
+const CenaDepoimentos: React.FC = () => (
+  <AbsoluteFill>
+    <Fundo />
+    <Logo />
+    <Texto tamanho={60} topo={300}>
+      O QUE OS <span style={{ color: LARANJA }}>CLIENTES</span> DIZEM
+    </Texto>
+    {DEPOIMENTOS.map((d, i) => (
+      <CartaoDepoimento
+        key={d.nome}
+        texto={d.texto}
+        nome={d.nome}
+        atraso={10 + i * 40}
+        topo={[430, 790, 1100][i]}
+      />
+    ))}
+  </AbsoluteFill>
+);
 
 // Cena 2: "não é por acaso"
 const CenaAcaso: React.FC = () => (
@@ -446,6 +542,7 @@ const CenaFinal: React.FC = () => {
 export const TbnAvaliacao: React.FC = () => {
   const cenas = [
     <CenaNota />,
+    <CenaDepoimentos />,
     <CenaAcaso />,
     <Vantagem
       icone={<IconeFibra />}
@@ -483,7 +580,10 @@ export const TbnAvaliacao: React.FC = () => {
         >
           {c}
           <Sequence from={6}>
-            <Audio src={staticFile(`narracao-tbn/${i + 1}.wav`)} volume={1.7} />
+            <Audio
+              src={staticFile(`narracao-tbn/${AUDIOS[i]}.wav`)}
+              volume={1.7}
+            />
           </Sequence>
         </Sequence>
       ))}
