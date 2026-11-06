@@ -84,7 +84,7 @@ const useMola = (atraso: number, damping = 12) => {
 };
 
 // Vídeo com zoom alternado a cada mudança de frase
-const VideoDinamico: React.FC<{ mudo?: boolean }> = ({ mudo = false }) => {
+const VideoDinamico: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame / FPS;
   let i = 0;
@@ -102,7 +102,6 @@ const VideoDinamico: React.FC<{ mudo?: boolean }> = ({ mudo = false }) => {
     <AbsoluteFill style={{ overflow: "hidden" }}>
       <OffthreadVideo
         src={staticFile("novembro/original.mp4")}
-        muted={mudo}
         style={{
           width: "100%",
           height: "100%",
@@ -453,8 +452,12 @@ export const Novembro: React.FC = () => {
 
       <Sequence from={q(VIDEO_SEGUNDOS)}>
         {/* Último quadro parado, por trás da tela final */}
-        <Freeze frame={q(VIDEO_SEGUNDOS) - 1}>
-          <VideoDinamico mudo />
+        <Freeze frame={0}>
+          <OffthreadVideo
+            src={staticFile("novembro/original.mp4")}
+            startFrom={q(VIDEO_SEGUNDOS) - 2}
+            muted
+          />
         </Freeze>
         <Final />
         <Audio src={staticFile("novembro/whoosh.wav")} volume={0.6} />
