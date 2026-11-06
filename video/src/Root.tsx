@@ -15,6 +15,7 @@ import { WifiCamera } from "./WifiCamera";
 import { FIBRA_DURACAO, FibraEditada } from "./FibraEditada";
 import { TBN_AVALIACAO_DURACAO, TbnAvaliacao } from "./TbnAvaliacao";
 import { TBN_CONHECA_DURACAO, TbnConheca } from "./TbnConheca";
+import { NOVEMBRO_DURACAO, Novembro } from "./Novembro";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -85,6 +86,14 @@ export const RemotionRoot: React.FC = () => {
         id="TbnConheca"
         component={TbnConheca}
         durationInFrames={TBN_CONHECA_DURACAO}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="Novembro"
+        component={Novembro}
+        durationInFrames={NOVEMBRO_DURACAO}
         fps={30}
         width={1080}
         height={1920}
