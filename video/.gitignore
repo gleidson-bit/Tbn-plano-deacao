@@ -7,3 +7,4 @@ dist
 out
 whisper.cpp
 public/wifi/
+public/video3/
