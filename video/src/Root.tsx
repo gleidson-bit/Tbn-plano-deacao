@@ -19,6 +19,7 @@ import { NOVEMBRO_DURACAO, Novembro } from "./Novembro";
 import { NOVEMBRO2_DURACAO, Novembro2 } from "./Novembro2";
 import { DOCE_DURACAO, DoceEncantada } from "./DoceEncantada";
 import { PRECO_FIXO_DURACAO, PrecoFixo } from "./PrecoFixo";
+import { WIFI6_CASA_DURACAO, Wifi6Casa } from "./Wifi6Casa";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -121,6 +122,14 @@ export const RemotionRoot: React.FC = () => {
         id="PrecoFixo"
         component={PrecoFixo}
         durationInFrames={PRECO_FIXO_DURACAO}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="Wifi6Casa"
+        component={Wifi6Casa}
+        durationInFrames={WIFI6_CASA_DURACAO}
         fps={30}
         width={1080}
         height={1920}
