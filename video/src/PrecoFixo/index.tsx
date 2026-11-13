@@ -36,34 +36,41 @@ const useMola = (atraso = 0, damping = 11) => {
 };
 
 // Frases da narração (segundos marcados pela transcrição)
+// Frases da narração (segundos marcados pela transcrição).
+// "|" separa os blocos que aparecem juntos na tela, cortados por sentido.
 const FRASES: { de: number; ate: number; texto: string; destaque: string[] }[] =
   [
     {
       de: 0.3,
       ate: 2.8,
-      texto: "A CHAMADA COMEÇA NA SALA",
+      texto: "A CHAMADA | COMEÇA NA SALA",
       destaque: ["SALA"],
     },
-    { de: 2.8, ate: 4.0, texto: "CONTINUA NA COZINHA", destaque: ["COZINHA"] },
-    { de: 4.0, ate: 5.0, texto: "PASSA PELO QUARTO", destaque: ["QUARTO"] },
-    { de: 5.0, ate: 6.9, texto: "SAI NA VARANDA", destaque: ["VARANDA"] },
+    {
+      de: 2.8,
+      ate: 4.0,
+      texto: "CONTINUA | NA COZINHA",
+      destaque: ["COZINHA"],
+    },
+    { de: 4.0, ate: 5.0, texto: "PASSA PELO | QUARTO", destaque: ["QUARTO"] },
+    { de: 5.0, ate: 6.9, texto: "SAI NA | VARANDA", destaque: ["VARANDA"] },
     {
       de: 6.9,
       ate: 9.0,
-      texto: "SORRINDO PARA A CÂMERA",
+      texto: "SORRINDO | PARA A CÂMERA",
       destaque: ["CÂMERA"],
     },
     {
       de: 9.0,
       ate: 11.0,
-      texto: "E A CONVERSA SEGUE SEM TRAVAR",
+      texto: "E A CONVERSA | SEGUE SEM TRAVAR",
       destaque: ["SEM", "TRAVAR"],
     },
     {
       de: 11.0,
       ate: 13.1,
-      texto: "CONHEÇA OS PLANOS COM O",
-      destaque: ["PLANOS"],
+      texto: "CONHEÇA OS PLANOS | COM O WI-FI 6",
+      destaque: ["PLANOS", "WI-FI", "6"],
     },
   ];
 
@@ -73,16 +80,25 @@ const Legenda: React.FC<{
   duracao: number;
 }> = ({ texto, destaque, duracao }) => {
   const frame = useCurrentFrame();
-  const palavras = texto.split(" ");
-  const porPalavra = (duracao * 0.9) / palavras.length;
-  const atual = Math.min(palavras.length - 1, Math.floor(frame / porPalavra));
-  const bloco = Math.floor(atual / 3);
-  const visiveis = palavras.slice(bloco * 3, bloco * 3 + 3);
+  const blocos = texto.split(" | ").map((b) => b.split(" "));
+  const total = blocos.reduce((n, b) => n + b.length, 0);
+  const porPalavra = (duracao * 0.92) / total;
+  const atualGeral = Math.min(total - 1, Math.floor(frame / porPalavra));
+  // Descobre em qual bloco e palavra estamos
+  let resto = atualGeral;
+  let bloco = 0;
+  while (resto >= blocos[bloco].length) {
+    resto -= blocos[bloco].length;
+    bloco++;
+  }
+  const atual = resto;
+  const visiveis = blocos[bloco];
+  const inicioBloco = 0;
   return (
     <div
       style={{
         position: "absolute",
-        top: 1460,
+        top: 1240,
         left: 30,
         right: 30,
         display: "flex",
@@ -94,7 +110,7 @@ const Legenda: React.FC<{
       }}
     >
       {visiveis.map((p, k) => {
-        const idx = bloco * 3 + k;
+        const idx = inicioBloco + k;
         return (
           <span
             key={`${idx}-${p}`}
@@ -181,7 +197,7 @@ const MapaCasa: React.FC = () => {
   COMODOS.forEach((c, i) => {
     if (t >= c.em) ativo = i;
   });
-  const largura = 230;
+  const largura = 240;
   return (
     <div
       style={{
@@ -228,8 +244,8 @@ const MapaCasa: React.FC = () => {
             </div>
             <div
               style={{
-                width: 120,
-                height: 120,
+                width: 140,
+                height: 140,
                 borderRadius: 30,
                 background: aceso ? LARANJA : "rgba(255,255,255,0.12)",
                 display: "flex",
@@ -238,10 +254,10 @@ const MapaCasa: React.FC = () => {
                 border: `4px solid ${atual ? BRANCO : "transparent"}`,
               }}
             >
-              <Icone d={c.d} tamanho={72} />
+              <Icone d={c.d} tamanho={86} />
             </div>
             <div
-              style={{ ...FONTE, color: BRANCO, fontSize: 32, marginTop: 6 }}
+              style={{ ...FONTE, color: BRANCO, fontSize: 42, marginTop: 6 }}
             >
               {c.nome}
             </div>
@@ -308,69 +324,6 @@ const Selo: React.FC<{
   );
 };
 
-// Selo grande "WI-FI 6 da TBN"
-const SeloWifi6: React.FC<{ topo: number }> = ({ topo }) => {
-  const p = useMola(0, 9);
-  const frame = useCurrentFrame();
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: topo,
-        left: 0,
-        right: 0,
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 24,
-          background: LARANJA,
-          border: `7px solid ${BRANCO}`,
-          borderRadius: 40,
-          padding: "18px 44px",
-          boxShadow: `0 0 ${40 + Math.sin(frame / 4) * 18}px ${LARANJA}`,
-          ...FONTE,
-          color: BRANCO,
-          transform: `scale(${p}) rotate(${interpolate(p, [0, 1], [-12, 0])}deg)`,
-        }}
-      >
-        <svg width="110" height="80" viewBox="0 0 24 17">
-          <path
-            d="M1 6.5 Q12 -2 23 6.5"
-            stroke={BRANCO}
-            strokeWidth="2.4"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <path
-            d="M5 10 Q12 4 19 10"
-            stroke={BRANCO}
-            strokeWidth="2.4"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <path
-            d="M9 13.3 Q12 11 15 13.3"
-            stroke={BRANCO}
-            strokeWidth="2.4"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <circle cx="12" cy="15.6" r="1.5" fill={BRANCO} />
-        </svg>
-        <div style={{ lineHeight: 0.95 }}>
-          <div style={{ fontSize: 96 }}>WI-FI 6</div>
-          <div style={{ fontSize: 40 }}>DA TBN</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Botão do WhatsApp
 const BotaoZap: React.FC<{ topo: number }> = ({ topo }) => {
   const p = useMola(0, 10);
@@ -406,6 +359,54 @@ const BotaoZap: React.FC<{ topo: number }> = ({ topo }) => {
         <Icone d={D.zap} tamanho={76} />
         {WHATSAPP}
       </div>
+    </div>
+  );
+};
+
+// Cartão do Wi-Fi 6 que cobre o texto "preço fixo" da tela final original,
+// para o final ter uma mensagem só (Wi-Fi 6) e o WhatsApp
+const CartaoWifi6: React.FC = () => {
+  const p = useMola(0, 12);
+  const frame = useCurrentFrame();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 730,
+        left: 70,
+        right: 70,
+        height: 440,
+        borderRadius: 48,
+        background: AZUL,
+        border: `6px solid ${LARANJA}`,
+        boxShadow: `0 0 ${30 + Math.sin(frame / 5) * 14}px ${LARANJA}88`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        ...FONTE,
+        color: BRANCO,
+        textAlign: "center",
+        transform: `scale(${interpolate(p, [0, 1], [0.85, 1])})`,
+        opacity: p,
+      }}
+    >
+      <div style={{ fontSize: 48 }}>PLANOS COM</div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 20,
+          fontSize: 140,
+          lineHeight: 1,
+          color: LARANJA,
+          margin: "8px 0 14px",
+        }}
+      >
+        <OndasWifi tamanho={130} />
+        WI-FI 6
+      </div>
+      <div style={{ fontSize: 50 }}>SINAL NA CASA TODA</div>
     </div>
   );
 };
@@ -456,14 +457,14 @@ const ELEMENTOS: {
     de: 13.2,
     ate: VIDEO_SEGUNDOS + FINAL_SEGUNDOS,
     som: "whoosh",
-    tela: <SeloWifi6 topo={1180} />,
+    tela: <CartaoWifi6 />,
   },
   // "Fale com a gente no WhatsApp"
   {
     de: 15.0,
     ate: VIDEO_SEGUNDOS + FINAL_SEGUNDOS,
     som: "pop",
-    tela: <BotaoZap topo={1430} />,
+    tela: <BotaoZap topo={1260} />,
   },
 ];
 
